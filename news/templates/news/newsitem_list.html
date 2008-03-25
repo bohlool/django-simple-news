@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load markup %}
+
+{% block title_tag %}
+	News
+{% endblock %}
+
+{% block main_content %}
+<h1>News</h1>
+
+	{% for item in item_list %}
+		<h2><a href="{{ item.get_absolute_url }}">{{ item.title }}</a></h2>
+		<h3>{{ item.date|date:"F j, Y" }}</h3>
+		{{ item.body|textile }}
+	{% endfor %}
+	
+	{% if is_paginated %}
+		<p>
+			{% if has_previous %}
+				<a href="?page={{ previous }}">&laquo; Previous</a> |
+			{% endif %}
+			
+			{% for p in page_range %}
+				{% ifequal page p  %}
+					<span class="current page">{{ p }}</span>
+				{% else %}
+					<a href="?page={{ p }}">{{ p }}</a>
+				{% endifequal %}
+			{% endfor %}
+			
+			{% if has_next %}
+				| <a href="?page={{ next }}">Next &raquo;</a>
+			{% endif %}
+		</p>
+	{% endif %}
+	
+{% endblock %}

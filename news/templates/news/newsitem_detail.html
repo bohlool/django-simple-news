@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load markup %}
+
+{% block title_tag %}
+	{{ item.title }}
+{% endblock %}
+
+{% block main_content %}
+	<h1>{{ item.title }}</h1>
+	<h2>{{ item.date|date:"F j, Y" }}</h2>
+	{{ item.body|textile }}
+{% endblock %}
