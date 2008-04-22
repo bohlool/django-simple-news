@@ -22,5 +22,5 @@ urlpatterns = patterns('django.views.generic.date_based',
 )
 
 urlpatterns += patterns('django.views.generic.list_detail',
-	url(r'^$', 'object_list', dict(news_dict, paginate_by=PAGINATE)),
+	url(r'^$', 'object_list', dict(news_dict, paginate_by=PAGINATE), name="news-index"),
 )
