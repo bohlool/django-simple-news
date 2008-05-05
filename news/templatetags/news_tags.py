@@ -57,8 +57,11 @@ class MonthNode(NewsNode):
 	
 	def render(self, context):
 		try:
-			months = NewsItem.on_site.published().dates('date', 'month')
+			months = NewsItem.on_site.published().dates('date', 'month', order="DESC")
 		except:
 			months = None
+		if self.limit is not None:
+			months = list(months)
+			months = months[:self.limit]
 		context[self.varname] = months
 		return ''
