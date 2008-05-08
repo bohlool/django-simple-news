@@ -16,3 +16,6 @@ class NewsFeed(Feed):
 
 	def items(self):
 		return NewsItem.on_site.published(5)
+		
+	def item_pubdate(self, item):
+		return self.item
