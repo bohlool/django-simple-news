@@ -33,6 +33,22 @@ class NewsItem(models.Model):
 			'slug': self.slug
 		})
 		
+	def get_previous(self):
+		try:
+			# isnull is to check whether it's published or not - drafts don't have dates, apparently
+			return NewsItem.on_site.filter(date__lt=self.date,date__isnull=False)[0]
+		except IndexError, e:
+			print 'Exception: %s' % e.message
+			return None
+			
+	def get_next(self):
+		try:
+			# isnull is to check whether it's published or not - drafts don't have dates, apparently
+			return NewsItem.on_site.filter(date__gt=self.date,date__isnull=False).order_by('date')[0]
+		except IndexError, e:
+			print 'Exception: %s' % e.message
+			return None
+			
 	class Admin:
 		list_display = ['title', 'date', 'site']
 		list_filter = ['date', 'site']
