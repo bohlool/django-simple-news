@@ -1,6 +1,7 @@
 from django.db import models 
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
+from django.contrib import admin
 
 class NewsManager(CurrentSiteManager):
 	def published(self, limit=None):
@@ -15,11 +16,12 @@ class NewsItem(models.Model):
 	on_site = NewsManager()
 	
 	title = models.CharField(max_length=100)
-	slug = models.SlugField(prepopulate_from=("title",), help_text=u'A slug is used as part of the URL for this article.  It is recommended to use the default value if possible.')
+	slug = models.SlugField(help_text=u'A slug is used as part of the URL for this article.  It is recommended to use the default value if possible.')
 	date = models.DateField(blank=True, null=True, help_text=u'YYYY-MM-DD')
 	snippet = models.TextField(blank=True, help_text=u'Snippets are used as a preview for this article (in sidebars, etc).')
 	body = models.TextField(blank=True)
 	site = models.ForeignKey(Site)
+	
 	
 	def __unicode__(self):
 		return self.title
@@ -59,3 +61,8 @@ class NewsItem(models.Model):
 	class Meta:
 		ordering = ['-date']
 		unique_together = (('slug', 'date', 'site'), )
+		
+class NewsItemAdmin(admin.ModelAdmin):
+	prepopulated_fields = {'slug':('title',)}
+		
+admin.site.register(NewsItem, NewsItemAdmin)	
