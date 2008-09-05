@@ -1,7 +1,7 @@
 from django.db import models 
+from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
-from django.contrib import admin
 
 class NewsManager(CurrentSiteManager):
 	def published(self, limit=None):
@@ -17,11 +17,10 @@ class NewsItem(models.Model):
 	
 	title = models.CharField(max_length=100)
 	slug = models.SlugField(help_text=u'A slug is used as part of the URL for this article.  It is recommended to use the default value if possible.')
-	date = models.DateField(blank=True, null=True, help_text=u'YYYY-MM-DD')
+	date = models.DateField(blank=True, null=True, help_text=u'YYYY-MM-DD  --  Leave blank if you don\'t want the article to appear on the site yet.' )
 	snippet = models.TextField(blank=True, help_text=u'Snippets are used as a preview for this article (in sidebars, etc).')
 	body = models.TextField(blank=True)
-	site = models.ForeignKey(Site)
-	
+	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
 	
 	def __unicode__(self):
 		return self.title
@@ -51,18 +50,6 @@ class NewsItem(models.Model):
 			print 'Exception: %s' % e.message
 			return None
 			
-	class Admin:
-		list_display = ['title', 'date', 'site']
-		list_filter = ['date', 'site']
-		search_fields = ['title', 'body']
-		date_hierarchy = 'date'
-		ordering = ['-date']
-		
 	class Meta:
 		ordering = ['-date']
 		unique_together = (('slug', 'date', 'site'), )
-		
-class NewsItemAdmin(admin.ModelAdmin):
-	prepopulated_fields = {'slug':('title',)}
-		
-admin.site.register(NewsItem, NewsItemAdmin)	

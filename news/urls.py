@@ -9,7 +9,7 @@ except:
 
 news_dict = {
 	'queryset': NewsItem.on_site.published(),
-	'template_object_name': 'item'
+	'template_object_name': 'item',
 }
 
 news_date_dict = dict(news_dict, date_field='date')
