@@ -27,7 +27,7 @@ class NewsItem(models.Model):
 		
 	# @models.permalink
 	def get_absolute_url(self):
-		return '/news/%s/%s/%s/' % (self.date.strftime('%Y'), self.date.strftime('%b').lower(), self.date.strftime('%d'), self.slug)
+		return '/news/%s/%s/%s/%s/' % (self.date.strftime('%Y'), self.date.strftime('%b').lower(), self.date.strftime('%d'), self.slug)
 		# return ('news-item', (), {
 		# 	'year': self.date.strftime('%Y'),
 		# 	'month': self.date.strftime('%b').lower(),
