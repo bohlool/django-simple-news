@@ -12,7 +12,8 @@ class NewsFeed(Feed):
 		return u'Latest news from %s' % Site.objects.get_current().name
 
 	def link(self):
-		return reverse('news-index')
+		# return reverse('news-index')
+		return '/news/'
 
 	def items(self):
 		return NewsItem.on_site.published(5)
