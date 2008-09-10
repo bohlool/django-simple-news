@@ -20,4 +20,4 @@ class NewsFeed(Feed):
 		
 	def item_pubdate(self, item):
 		from datetime import datetime
-		return datetime(item.date)
+		return datetime(item.date.year, item.date.month, item.date.day)
