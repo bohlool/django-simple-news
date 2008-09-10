@@ -19,4 +19,5 @@ class NewsFeed(Feed):
 		return NewsItem.on_site.published(5)
 		
 	def item_pubdate(self, item):
-		return item.date
+		from datetime import datetime
+		return datetime(item.date)
