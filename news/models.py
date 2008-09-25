@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
 from tagging.fields import TagField
+from django.contrib.comments.models import Comment
 
 class NewsManager(CurrentSiteManager):
 	def published(self, limit=None):
@@ -33,8 +34,18 @@ class NewsItem(models.Model):
 	snippet = models.TextField(blank=True, help_text=u'Snippets are used as a preview for this article (in sidebars, etc).')
 	body = models.TextField(blank=True)
 	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
-	tags = TagField(blank=True, max_length=500, help_text=u'Tags allow you categorize your articles. Separate tags with spaces.')
+	tags = TagField(blank=True, max_length=500, help_text=u'Tags allow you categorize your articles. Separate tags with commas.')
 	author = models.ForeignKey(NewsAuthor,blank=False,editable=True)
+	allow_comments = models.BooleanField(default=True,blank=False,editable=True)
+	
+	def approved_comments(self):
+		return Comment.objects.for_model(self).filter(is_public=True)
+		
+	def unapproved_comments(self):
+		return Comment.objects.for_model(self).filter(is_public=False)
+		
+	def total_comments(self):
+		return Comment.objects.for_model(self)
 	
 	def __unicode__(self):
 		return self.title
