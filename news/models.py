@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
+from tagging.fields import TagField
 
 class NewsManager(CurrentSiteManager):
 	def published(self, limit=None):
@@ -9,6 +10,17 @@ class NewsManager(CurrentSiteManager):
 		if limit:
 			return qs[:limit]
 		return qs
+		
+class NewsAuthor(models.Model):
+	objects = models.Manager()
+	on_site = CurrentSiteManager()
+	
+	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
+	name = models.CharField(max_length=500)
+	
+	def __unicode__(self):
+		return self.name
+	
 
 class NewsItem(models.Model):
 	
@@ -21,6 +33,8 @@ class NewsItem(models.Model):
 	snippet = models.TextField(blank=True, help_text=u'Snippets are used as a preview for this article (in sidebars, etc).')
 	body = models.TextField(blank=True)
 	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
+	tags = TagField(blank=True, max_length=500, help_text=u'Tags allow you categorize your articles. Separate tags with spaces.')
+	author = models.ForeignKey(NewsAuthor,blank=False,editable=True)
 	
 	def __unicode__(self):
 		return self.title
