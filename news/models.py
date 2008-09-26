@@ -22,6 +22,15 @@ class NewsAuthor(models.Model):
 	def __unicode__(self):
 		return self.name
 	
+class NewsCategory(models.Model):
+	objects = models.Manager()
+	on_site = CurrentSiteManager()
+	
+	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
+	name = models.CharField(max_length=200)
+	
+	def __unicode__(self):
+		return self.name
 
 class NewsItem(models.Model):
 	
@@ -34,9 +43,10 @@ class NewsItem(models.Model):
 	snippet = models.TextField(blank=True, help_text=u'Snippets are used as a preview for this article (in sidebars, etc).')
 	body = models.TextField(blank=True)
 	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
-	tags = TagField(blank=True, max_length=500, help_text=u'Tags allow you categorize your articles. Separate tags with commas.')
-	author = models.ForeignKey(NewsAuthor,blank=False,editable=True)
+	tags = TagField(null=True,blank=True, max_length=500, help_text=u'Tags allow you categorize your articles. Separate tags with commas.')
+	author = models.ForeignKey(NewsAuthor,null=True,editable=True)
 	allow_comments = models.BooleanField(default=True,blank=False,editable=True)
+	category = models.ForeignKey(NewsCategory, null=True, editable=True)
 	
 	def approved_comments(self):
 		return Comment.objects.for_model(self).filter(is_public=True)
