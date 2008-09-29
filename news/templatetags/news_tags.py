@@ -118,7 +118,6 @@ class MonthNode(template.Node):
 	
 	def __init__(self,varname,limit=None):
 		self.varname = varname
-		self.qs = qs
 		self.limit = limit	# for MonthNode inheritance
 	
 	def render(self, context):
