@@ -6,7 +6,7 @@
 
 {% block main_content %}
 <h1>Authors</h1>
-	<ul>
+	<ul id='author-list'>
 	{% for author in item_list %}
 		<li><a href='{% url news-by-author author_slug=author.slug %}'>{{ author.name }}</a></li>
 	{% endfor %}
