@@ -4,6 +4,7 @@ from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
 from tagging.fields import TagField
 from django.contrib.comments.models import Comment
+from django.template.defaultfilters import slugify
 
 class NewsManager(CurrentSiteManager):
 	def published(self, limit=None):
@@ -18,9 +19,15 @@ class NewsAuthor(models.Model):
 	
 	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
 	name = models.CharField(max_length=500)
+	slug = models.SlugField()
 	
 	def __unicode__(self):
 		return self.name
+		
+	def save(self,*args,**kwargs):
+		self.slug = slugify(self.name)
+		self.slug = self.slug.lower().replace('-','_')
+		super(NewsAuthor,self).save(*args,**kwargs)
 	
 class NewsCategory(models.Model):
 	objects = models.Manager()
@@ -28,9 +35,15 @@ class NewsCategory(models.Model):
 	
 	site = models.ForeignKey(Site, editable=False, default=settings.SITE_ID)
 	name = models.CharField(max_length=200)
+	slug = models.SlugField()
 	
 	def __unicode__(self):
 		return self.name
+		
+	def save(self,*args,**kwargs):
+		self.slug = slugify(self.name)
+		self.slug = self.slug.lower().replace('-','_')
+		super(NewsCategory,self).save(*args,**kwargs)
 
 class NewsItem(models.Model):
 	

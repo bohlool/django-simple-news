@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from news.models import NewsItem
+from news.models import NewsItem, NewsAuthor
 
 class NewsItemAdmin(admin.ModelAdmin):
 	prepopulated_fields = {'slug':('title',)}
