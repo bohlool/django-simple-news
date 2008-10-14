@@ -42,7 +42,6 @@ class NewsCategory(models.Model):
 		
 	def save(self,*args,**kwargs):
 		self.slug = slugify(self.name)
-		self.slug = self.slug.lower().replace('-','_')
 		super(NewsCategory,self).save(*args,**kwargs)
 
 class NewsItem(models.Model):
