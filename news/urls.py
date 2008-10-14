@@ -33,3 +33,4 @@ urlpatterns += patterns('',
 	url(r'^authors/(?P<author_slug>.+)/$',news_views.by_author,name='news-by-author'),
 	url(r'^authors/$',news_views.author_list,name='news-authors'),
 )
+

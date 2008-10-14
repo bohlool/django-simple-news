@@ -3,7 +3,6 @@ from django.views.generic.list_detail import object_list, object_detail
 
 def by_tag(request,tag):
 	qs = NewsItem.on_site.filter(tags__contains=tag,date__isnull=False)
-	print qs
 	return object_list(request,qs,template_object_name='item')
 	
 def by_category(request,category_slug):
