@@ -4,6 +4,7 @@ from news.models import NewsItem, NewsAuthor, NewsCategory
 
 register = template.Library()
 
+
 @register.tag
 def get_news(parser, token):
 	"""
@@ -19,32 +20,71 @@ def get_news(parser, token):
 			raise template.TemplateSyntaxError("If provided, second argument to `get_news` must be a positive whole number.")
 	if bits[-2].lower() != 'as':
 		raise template.TemplateSyntaxError("Missing 'as' from 'get_news' template tag.  Format is {% get_news 5 as news_items %}.")
-	qs = NewsItem.on_site.published(limit)
-	return NewsItemNode(bits[-1],qs)
+	return NewsItemNode(bits[-1], limit)
+
 		
 class NewsItemNode(template.Node):
+	"""
+	Returns a QuerySet of published NewsItems based on the lookup parameters.
+	"""
 	
-	def __init__(self,varname,qs,limit=None, author_varname=None):
+	def __init__(self, varname, limit=None, author=None, filters=None):
 		self.varname = varname
-		self.qs = qs
-		self.limit = limit	# for MonthNode inheritance
-		if author_varname is not None:
-			self.author_varname = template.Variable(author_varname)
-		else:
-			self.author_varname = None
+		self.limit = limit
+		self.filters = filters
+		# author is either a literal NewsAuthor slug,
+		# or a template variable containing a NewsAuthor slug.
+		self.author = author
 		
 	def render(self, context):
-		if self.author_varname is not None:
-			author_slug = self.author_varname.resolve(context)
-			self.qs = self.qs.filter(author__slug=author_slug, site__id=settings.SITE_ID)
-		try:
-			news = self.qs
-		except:
-			news = None
-		context[self.varname] = news
-		return ''
+		# Base QuerySet, which will be filtered further if necessary.
+		news = NewsItem.on_site.published()
 		
-# TODO: refactor would be nice here - lots of duplication happening
+		# Do we filter by author?  If so, first attempt to resolve `author` as
+		# a template.Variable.  If that doesn't work, use `author` as a literal
+		# NewsAuthor.slug lookup.
+		if self.author is not None:
+			try:
+				author_slug = template.Variable(self.author).resolve(context)
+			except template.VariableDoesNotExist:
+				author_slug = self.author
+			news = news.filter(author__slug=author_slug)
+			
+		# Apply any additional lookup filters
+		if self.filters:
+			news = news.filter(**self.filters)
+			
+		# Apply a limit.
+		if self.limit:
+			news = news[:self.limit]
+			
+		context[self.varname] = news
+		return u''
+
+
+def parse_token(token):
+	"""
+	Parses a token into 'slug', 'limit', and 'varname' values.
+	Token must follow format {% tag_name <slug> [<limit>] as <varname> %}
+	"""
+	bits = token.split_contents()
+	if len(bits) == 5:
+		# A limit was passed it -- try to parse / validate it.
+		try:
+			limit = abs(int(bits[2]))
+		except:
+			limit = None
+	elif len(bits) == 4:
+		# No limit was specified.
+		limit = None
+	else:
+		# Syntax is wrong.
+		raise template.TemplateSyntaxError("Wrong number of arguments: format is {%% %s <slug> [<limit>] as <varname> %%}" % bits[0])
+	if bits[-2].lower() != 'as':
+		raise template.TemplateSyntaxError("Missing 'as': format is {%% %s <slug> [<limit>] as <varname> %%}" % bits[0])
+	return (bits[1], limit, bits[-1])
+
+
 @register.tag
 def get_posts_by_author(parser,token):
 	"""
@@ -52,16 +92,9 @@ def get_posts_by_author(parser,token):
 		{% get_posts_by_author foo 5 as news_items %}	# 5 articles
 		{% get_posts_by_author foo as news_items %}	# all articles
 	"""
-	tokens = token.split_contents()
-	author_slug = tokens[1]
-	error = "Format is {% get_posts_by_author <slug> [<limit>] as <varname> %}"
-	try:
-		the_author = NewsAuthor.on_site.get(slug=author_slug)
-		qs = NewsItem.on_site.filter(author=the_author).order_by('-date')
-	except:
-		# raise template.TemplateSyntaxError('An author with that slug could not be found.')
-		qs = NewsItem.on_site.published()
-	return get_posts_by_queryset(parser,tokens,error,qs, author_varname=author_slug)
+	author_slug, limit, varname = parse_token(token)
+	return NewsItemNode(varname, limit, author=author_slug)
+
 	
 @register.tag
 def get_posts_by_category(parser,token):
@@ -70,42 +103,18 @@ def get_posts_by_category(parser,token):
 		{% get_posts_by_category foo 5 as news_items %}	# 5 articles
 		{% get_posts_by_category foo as news_items %}	# all articles
 	"""
-	tokens = token.split_contents()
-	category_slug = tokens[1]
-	error = "Format is {% get_posts_by_category <slug> [<limit>] as <varname> %}"
-	try:
-		the_category = NewsCategory.on_site.get(slug=category_slug)
-	except:
-		raise template.TemplateSyntaxError('A category with that slug could not be found.')
-	qs = NewsItem.on_site.filter(category=the_category).order_by('-date')
-	return get_posts_by_queryset(parser,tokens,error,qs)
+	category_slug, limit, varname = parse_token(token)
+	return NewsItemNode(varname, limit, filters={'category__slug':category_slug})
+
 	
 @register.tag
 def get_posts_by_tag(parser,token):
 	"""
-	{% get_posts_with_tag <tag> [<limit>] as <varname> %}
+	{% get_posts_by_tag <tag> [<limit>] as <varname> %}
 	"""
-	tokens = token.split_contents()
-	error = "Format is {% get_posts_with_tag <tag> [<limit>] as <varname> %}"
-	the_tag = tokens[1]
-	qs = NewsItem.on_site.filter(tags__contains=the_tag)
-	return get_posts_by_queryset(parser,tokens,error,qs)
-	
-def get_posts_by_queryset(parser,tokens,error,qs, *args, **kwargs):
-	varname = tokens[-1]
-	author_varname = kwargs.get('author_varname', None)
-	if qs is not None:
-		if len(tokens) > 5 or len(tokens) < 4:
-			raise template.TemplateSyntaxError(error)
-		try:
-			limit = abs(int(tokens[2]))
-		except:
-			limit = None
-		# default to published:
-		qs.filter(date__isnull=False)
-		if limit:
-			qs = qs[:limit]
-	return NewsItemNode(varname, qs, author_varname=author_varname)
+	tag, limit, varname = parse_token(token)
+	return NewsItemNode(varname, limit, filters={'tags__contains':tag})
+
 		
 @register.tag
 def months_with_news(parser, token):
