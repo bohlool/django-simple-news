@@ -88,7 +88,7 @@ class NewsItem(models.Model):
 			# isnull is to check whether it's published or not - drafts don't have dates, apparently
 			return NewsItem.on_site.filter(date__lt=self.date,date__isnull=False)[0]
 		except IndexError, e:
-			print 'Exception: %s' % e.message
+			# print 'Exception: %s' % e.message
 			return None
 			
 	def get_next(self):
@@ -96,7 +96,7 @@ class NewsItem(models.Model):
 			# isnull is to check whether it's published or not - drafts don't have dates, apparently
 			return NewsItem.on_site.filter(date__gt=self.date,date__isnull=False).order_by('date')[0]
 		except IndexError, e:
-			print 'Exception: %s' % e.message
+			# print 'Exception: %s' % e.message
 			return None
 			
 	class Meta:
