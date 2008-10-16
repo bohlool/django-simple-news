@@ -1,3 +1,4 @@
+from django.conf import settings
 from django import template
 from news.models import NewsItem, NewsAuthor, NewsCategory
 
@@ -23,12 +24,19 @@ def get_news(parser, token):
 		
 class NewsItemNode(template.Node):
 	
-	def __init__(self,varname,qs,limit=None):
+	def __init__(self,varname,qs,limit=None, author_varname=None):
 		self.varname = varname
 		self.qs = qs
 		self.limit = limit	# for MonthNode inheritance
+		if author_varname is not None:
+			self.author_varname = template.Variable(author_varname)
+		else:
+			self.author_varname = None
 		
 	def render(self, context):
+		if self.author_varname is not None:
+			author_slug = self.author_varname.resolve(context)
+			self.qs = self.qs.filter(author__slug=author_slug, site__id=settings.SITE_ID)
 		try:
 			news = self.qs
 		except:
@@ -49,10 +57,11 @@ def get_posts_by_author(parser,token):
 	error = "Format is {% get_posts_by_author <slug> [<limit>] as <varname> %}"
 	try:
 		the_author = NewsAuthor.on_site.get(slug=author_slug)
+		qs = NewsItem.on_site.filter(author=the_author).order_by('-date')
 	except:
-		raise template.TemplateSyntaxError('An author with that slug could not be found.')
-	qs = NewsItem.on_site.filter(author=the_author).order_by('-date')
-	return get_posts_by_queryset(parser,tokens,error,qs)
+		# raise template.TemplateSyntaxError('An author with that slug could not be found.')
+		qs = NewsItem.on_site.published()
+	return get_posts_by_queryset(parser,tokens,error,qs, author_varname=author_slug)
 	
 @register.tag
 def get_posts_by_category(parser,token):
@@ -82,19 +91,21 @@ def get_posts_by_tag(parser,token):
 	qs = NewsItem.on_site.filter(tags__contains=the_tag)
 	return get_posts_by_queryset(parser,tokens,error,qs)
 	
-def get_posts_by_queryset(parser,tokens,error,qs):
+def get_posts_by_queryset(parser,tokens,error,qs, *args, **kwargs):
 	varname = tokens[-1]
-	if len(tokens) > 5 or len(tokens) < 4:
-		raise template.TemplateSyntaxError(error)
-	try:
-		limit = abs(int(tokens[2]))
-	except:
-		limit = None
-	# default to published:
-	qs.filter(date__isnull=False)
-	if limit:
-		qs = qs[:limit]
-	return NewsItemNode(varname,qs)
+	author_varname = kwargs.get('author_varname', None)
+	if qs is not None:
+		if len(tokens) > 5 or len(tokens) < 4:
+			raise template.TemplateSyntaxError(error)
+		try:
+			limit = abs(int(tokens[2]))
+		except:
+			limit = None
+		# default to published:
+		qs.filter(date__isnull=False)
+		if limit:
+			qs = qs[:limit]
+	return NewsItemNode(varname, qs, author_varname=author_varname)
 		
 @register.tag
 def months_with_news(parser, token):
