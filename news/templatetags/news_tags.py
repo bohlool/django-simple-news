@@ -28,13 +28,14 @@ class NewsItemNode(template.Node):
 	Returns a QuerySet of published NewsItems based on the lookup parameters.
 	"""
 	
-	def __init__(self, varname, limit=None, author=None, filters=None):
+	def __init__(self, varname, limit=None, author=None, category_slug=None, filters=None):
 		self.varname = varname
 		self.limit = limit
 		self.filters = filters
 		# author is either a literal NewsAuthor slug,
 		# or a template variable containing a NewsAuthor slug.
 		self.author = author
+		self.category = category_slug
 		
 	def render(self, context):
 		# Base QuerySet, which will be filtered further if necessary.
@@ -49,6 +50,13 @@ class NewsItemNode(template.Node):
 			except template.VariableDoesNotExist:
 				author_slug = self.author
 			news = news.filter(author__slug=author_slug)
+			
+		if self.category is not None:
+			try:
+				category_slug = template.Variable(self.category).resolve(context)
+			except template.VariableDoesNotExist:
+				category_slug = self.category
+			news = news.filter(category__slug=category_slug)
 			
 		# Apply any additional lookup filters
 		if self.filters:
@@ -104,7 +112,14 @@ def get_posts_by_category(parser,token):
 		{% get_posts_by_category foo as news_items %}	# all articles
 	"""
 	category_slug, limit, varname = parse_token(token)
-	return NewsItemNode(varname, limit, filters={'category__slug':category_slug})
+	return NewsItemNode(varname, limit, category_slug=category_slug)
+	
+@register.tag
+def get_news_by_category(parser,token):
+	"""
+	This is because I got sick of having to debug issues due to the fact that I typed one or the other.
+	"""
+	return get_posts_by_category(parser,token)
 
 	
 @register.tag
