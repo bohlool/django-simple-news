@@ -8,7 +8,7 @@ def by_tag(request,tag):
 def by_category(request,category_slug):
 	the_category = NewsCategory.on_site.get(slug=category_slug)
 	qs = NewsItem.on_site.filter(category=the_category,date__isnull=False)
-	return object_list(request,qs,template_object_name='item')
+	return object_list(request,qs,template_object_name='item',extra_context={'category':the_category})
 	
 def category_list(request,empty_arg):
 	return object_list(request,NewsCategory.on_site.all(),template_object_name='item')
