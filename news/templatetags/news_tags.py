@@ -129,7 +129,6 @@ def get_posts_by_tag(parser,token):
 	"""
 	tag, limit, varname = parse_token(token)
 	return NewsItemNode(varname, limit, filters={'tags__contains':tag})
-
 		
 @register.tag
 def months_with_news(parser, token):
@@ -164,4 +163,36 @@ class MonthNode(template.Node):
 			months = list(months)
 			months = months[:self.limit]
 		context[self.varname] = months
+		return ''
+		
+@register.tag
+def get_categories(parser,token):
+    """
+        {% get_categories as <varname> %}
+        {% get_categories 5 as <varname> %}
+    """
+	bits = token.split_contents()
+	if len(bits) == 3:
+		limit = None
+	elif len(bits) == 4:
+		try:
+			limit = abs(int(bits[1]))
+		except ValueError:
+			raise template.TemplateSyntaxError("If provided, second argument to `get_categories` must be a positive whole number.")
+	if bits[-2].lower() != 'as':
+		raise template.TemplateSyntaxError("Missing 'as' from 'get_categories' template tag.  Format is {% get_categories 5 as categories %}.")
+	return CategoryNode(bits[-1], limit=limit)
+    
+class CategoryNode(template.Node):
+    
+	def __init__(self,varname,limit=None):
+		self.varname = varname
+		self.limit = limit
+	
+	def render(self, context):
+		categories = NewsCategory.on_site.all()
+		if self.limit is not None:
+		    categories = list(categories)
+		    categories = categories[:self.limit]
+		context[self.varname] = categories
 		return ''
