@@ -1,2 +1,4 @@
 {% load markup %}
-{{ obj.body|textile }}
+{% super_render %}
+    {{ obj.body|textile }}
+{% end_super_render %}
